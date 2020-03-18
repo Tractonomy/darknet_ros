@@ -1,0 +1,12 @@
+darknet_ros:
+  ros__parameters:
+    yolo_model:
+      config_file:
+        name: carts.cfg
+      weight_file:
+        name: carts.weights
+      threshold:
+        value: 0.3
+      detection_classes:
+        names:
+          - cart
