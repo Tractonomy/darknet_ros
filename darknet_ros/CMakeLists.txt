@@ -199,23 +199,6 @@ install(
   FILES_MATCHING PATTERN "*.h"
 )
 
-# Download yolov2-tiny.weights
-set(PATH "${CMAKE_CURRENT_SOURCE_DIR}/yolo_network_config/weights")
-set(FILE "${PATH}/yolov2-tiny.weights")
-message(STATUS "Checking and downloading yolov2-tiny.weights if needed ...")
-if (NOT EXISTS "${FILE}")
-  message(STATUS "... file does not exist. Downloading now ...")
-  execute_process(COMMAND wget http://pjreddie.com/media/files/yolov2-tiny.weights -P ${PATH})
-endif()
-
-# Download yolov3.weights
-set(FILE "${PATH}/yolov3.weights")
-message(STATUS "Checking and downloading yolov3.weights if needed ...")
-if (NOT EXISTS "${FILE}")
-  message(STATUS "... file does not exist. Downloading now ...")
-  execute_process(COMMAND wget http://pjreddie.com/media/files/yolov3.weights -P ${PATH})
-endif()
-
 install(DIRECTORY yolo_network_config/cfg yolo_network_config/weights DESTINATION share/${PROJECT_NAME}/yolo_network_config/)
 install(DIRECTORY launch config DESTINATION share/${PROJECT_NAME}/)
 
@@ -225,13 +208,13 @@ install(DIRECTORY launch config DESTINATION share/${PROJECT_NAME}/)
 
 if(BUILD_TESTING)
   # Download yolov2.weights
-  set(PATH "${CMAKE_CURRENT_SOURCE_DIR}/yolo_network_config/weights")
-  set(FILE "${PATH}/yolov2.weights")
-  message(STATUS "Checking and downloading yolov2.weights if needed ...")
-  if (NOT EXISTS "${FILE}")
-    message(STATUS "... file does not exist. Downloading now ...")
-    execute_process(COMMAND wget http://pjreddie.com/media/files/yolov2.weights -P ${PATH})
-  endif()
+  #set(PATH "${CMAKE_CURRENT_SOURCE_DIR}/yolo_network_config/weights")
+  #set(FILE "${PATH}/yolov2.weights")
+  #message(STATUS "Checking and downloading yolov2.weights if needed ...")
+  #if (NOT EXISTS "${FILE}")
+  #  message(STATUS "... file does not exist. Downloading now ...")
+  #  execute_process(COMMAND wget http://pjreddie.com/media/files/yolov2.weights -P ${PATH})
+  #endif()
 
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
