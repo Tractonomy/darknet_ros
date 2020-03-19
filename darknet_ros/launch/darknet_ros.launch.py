@@ -9,6 +9,7 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 def generate_launch_description():
+  use_sim_time = LaunchConfiguration('use_sim_time', default = 'false')
   darknet_ros_share_dir = get_package_share_directory('darknet_ros')
 
   image = LaunchConfiguration('image', default = '/camera/rgb/image_raw')
@@ -50,6 +51,7 @@ def generate_launch_description():
         "autoconfigure": True,
         "config_path": yolo_config_path, 
         "weights_path": yolo_weights_path,
+        "use_sim_time": use_sim_time,
       },
     ])
 
