@@ -26,7 +26,7 @@ char *data;
 char **detectionNames;
 
 YoloObjectDetector::YoloObjectDetector()
-    : Node("darknet_ros"),
+    : nav2_util::LifecycleNode("darknet_ros", "", true),
       numClasses_(0),
       classLabels_(0),
       rosBoxes_(0),
@@ -61,15 +61,23 @@ YoloObjectDetector::YoloObjectDetector()
   declare_parameter("publishers.detection_image.latch", true);
 
   declare_parameter("actions.camera_reading.topic", std::string("check_for_objects"));
+
+  bool autostart;
+  declare_parameter("autostart", true);
+  get_parameter("autostart", autostart);
+  bool autoconfigure;
+  declare_parameter("autoconfigure", true);
+  get_parameter("autoconfigure", autoconfigure);
+  if (autoconfigure || autostart) {
+    configure();
+  }
+  if (autostart) {
+    activate();
+  }
 }
 
 YoloObjectDetector::~YoloObjectDetector()
 {
-  {
-    std::unique_lock<std::shared_mutex> lockNodeStatus(mutexNodeStatus_);
-    isNodeRunning_ = false;
-  }
-  yoloThread_.join();
 }
 
 bool YoloObjectDetector::readParameters()
@@ -95,6 +103,109 @@ bool YoloObjectDetector::readParameters()
   rosBoxCounter_ = std::vector<int>(numClasses_);
 
   return true;
+}
+
+CallbackReturn
+YoloObjectDetector::on_configure(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "Configuring");
+
+  init();
+
+  return CallbackReturn::SUCCESS;
+}
+
+CallbackReturn
+YoloObjectDetector::on_activate(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "Activating");
+
+  objectPublisher_->on_activate();
+  detectionImagePublisher_->on_activate();
+  boundingBoxesPublisher_->on_activate();
+
+  {
+    std::unique_lock<std::shared_mutex> lockNodeStatus(mutexNodeStatus_);
+    isNodeRunning_ = true;
+    demoDone_ = false;
+  }
+  yoloThread_ = std::thread(&YoloObjectDetector::yolo, this);
+
+  return CallbackReturn::SUCCESS;
+}
+
+CallbackReturn
+YoloObjectDetector::on_deactivate(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "Deactivating");
+
+  {
+    std::unique_lock<std::shared_mutex> lockNodeStatus(mutexNodeStatus_);
+    isNodeRunning_ = false;
+  }
+  yoloThread_.join();
+
+  cv::destroyAllWindows();
+
+  // it_->on_deactivate();
+  objectPublisher_->on_deactivate();
+  detectionImagePublisher_->on_deactivate();
+  boundingBoxesPublisher_->on_deactivate();
+
+  for (int i = 0; i < demoFrame_; ++i){
+      free(predictions_[i]);
+  }
+  free(predictions_);
+  free(avg_);
+  free(roiBoxes_);
+
+  for (int i = 0; i< 3; i++) {
+    free_image(buff_[i]);
+    free_image(buffLetter_[i]);
+  }
+  
+  return CallbackReturn::SUCCESS;
+}
+
+CallbackReturn
+YoloObjectDetector::on_cleanup(const rclcpp_lifecycle::State & state)
+{
+  RCLCPP_INFO(get_logger(), "Cleaning up");
+
+  it_.reset();
+  objectPublisher_.reset();
+  detectionImagePublisher_.reset();
+  boundingBoxesPublisher_.reset();
+
+  checkForObjectsActionServer_.reset();
+  goal_handle_.reset();
+
+  free_network(net_);
+
+  delete[] cfg;
+  delete[] weights;
+  delete[] data;
+  for (int i = 0; i < numClasses_; i++) {
+    delete[] detectionNames[i];
+  }
+  free(detectionNames);
+  free(demoAlphabet_);
+
+  return CallbackReturn::SUCCESS;
+}
+
+CallbackReturn
+YoloObjectDetector::on_error(const rclcpp_lifecycle::State &)
+{
+  RCLCPP_FATAL(get_logger(), "Lifecycle node entered error state");
+  return CallbackReturn::SUCCESS;
+}
+
+CallbackReturn
+YoloObjectDetector::on_shutdown(const rclcpp_lifecycle::State &)
+{
+  RCLCPP_INFO(get_logger(), "Shutting down");
+  return CallbackReturn::SUCCESS;
 }
 
 void YoloObjectDetector::init()
@@ -148,7 +259,6 @@ void YoloObjectDetector::init()
   // Load network.
   setupNetwork(cfg, weights, data, thresh, detectionNames, numClasses_,
                 0, 0, 1, 0.5, 0, 0, 0, 0);
-  yoloThread_ = std::thread(&YoloObjectDetector::yolo, this);
 
   // Initialize publisher and subscriber.
   std::string cameraTopicName;
@@ -175,7 +285,7 @@ void YoloObjectDetector::init()
   get_parameter("publishers.detection_image.queue_size", detectionImageQueueSize);
   get_parameter("publishers.detection_image.latch", detectionImageLatch);
 
-  it_ = std::make_shared<image_transport::ImageTransport>(shared_from_this());
+  it_ = std::make_shared<image_transport::ImageTransport>(rclcpp_node_);
   
   using std::placeholders::_1;
   imageSubscriber_ = it_->subscribe(cameraTopicName, cameraQueueSize,

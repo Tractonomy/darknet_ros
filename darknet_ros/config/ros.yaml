@@ -19,8 +19,8 @@ darknet_ros:
       detection_image:
         topic: /darknet_ros/detection_image
         queue_size: 1
-        latch: true
+        latch: false
     image_view:
       enable_opencv: true
-      wait_key_delay: 3
-      enable_console_output: true
+      wait_key_delay: 1
+      enable_console_output: false

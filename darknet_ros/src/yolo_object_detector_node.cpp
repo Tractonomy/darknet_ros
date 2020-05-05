@@ -13,8 +13,6 @@ int main(int argc, char** argv) {
   rclcpp::init(argc, argv);
 
   auto yoloObjectDetector = std::make_shared<darknet_ros::YoloObjectDetector>();
-
-  yoloObjectDetector->init();
   
   rclcpp::spin(yoloObjectDetector->get_node_base_interface());
 

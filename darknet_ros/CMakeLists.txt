@@ -50,6 +50,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(image_transport REQUIRED)
@@ -57,10 +58,12 @@ find_package(cv_bridge REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(darknet_ros_msgs REQUIRED)
 find_package(ament_index_cpp REQUIRED)
+find_package(nav2_util REQUIRED)
 
 set(dependencies
     rclcpp
     rclpy
+    rclcpp_lifecycle
     rclcpp_action
     std_msgs
     image_transport
@@ -68,6 +71,7 @@ set(dependencies
     sensor_msgs
     darknet_ros_msgs
     ament_index_cpp
+    nav2_util
 )
 
 # Enable OPENCV in darknet

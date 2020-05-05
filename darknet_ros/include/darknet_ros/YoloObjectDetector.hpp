@@ -20,6 +20,7 @@
 
 // ROS
 #include "rclcpp/rclcpp.hpp"
+#include "nav2_util/lifecycle_node.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "std_msgs/msg/header.hpp"
 #include "sensor_msgs/msg/image.hpp"
@@ -76,7 +77,9 @@ typedef struct
   std_msgs::msg::Header header;
 } IplImageWithHeader_;
 
-class YoloObjectDetector : public rclcpp::Node
+using CallbackReturn = nav2_util::CallbackReturn;
+
+class YoloObjectDetector : public nav2_util::LifecycleNode
 {
  public:
   /*!
@@ -89,12 +92,50 @@ class YoloObjectDetector : public rclcpp::Node
    */
   ~YoloObjectDetector();
 
+protected:
+  /**
+   * @brief Configure member variables and initializes planner
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Activate member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Deactivate member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Reset member variables
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when in shutdown state
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+  /**
+   * @brief Called when in error state
+   * @param state Reference to LifeCycle node state
+   * @return SUCCESS or FAILURE
+   */
+  CallbackReturn on_error(const rclcpp_lifecycle::State & state) override;
+
+private:
   /*!
    * Initialize the ROS connections.
    */
   void init();
 
- private:
   /*!
    * Reads and verifies the ROS parameters.
    * @return true if successful.
@@ -158,8 +199,8 @@ class YoloObjectDetector : public rclcpp::Node
 
   //! ROS subscriber and publisher.
   image_transport::Subscriber imageSubscriber_;
-  rclcpp::Publisher<darknet_ros_msgs::msg::ObjectCount>::SharedPtr objectPublisher_;
-  rclcpp::Publisher<darknet_ros_msgs::msg::BoundingBoxes>::SharedPtr boundingBoxesPublisher_;
+  rclcpp_lifecycle::LifecyclePublisher<darknet_ros_msgs::msg::ObjectCount>::SharedPtr objectPublisher_;
+  rclcpp_lifecycle::LifecyclePublisher<darknet_ros_msgs::msg::BoundingBoxes>::SharedPtr boundingBoxesPublisher_;
 
   //! Detected objects.
   std::vector<std::vector<RosBox_> > rosBoxes_;
@@ -171,7 +212,7 @@ class YoloObjectDetector : public rclcpp::Node
   int frameHeight_;
 
   //! Publisher of the bounding box image.
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr detectionImagePublisher_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr detectionImagePublisher_;
 
   // Yolo running on thread.
   std::thread yoloThread_;
@@ -218,7 +259,7 @@ class YoloObjectDetector : public rclcpp::Node
   bool imageStatus_ = false;
   std::shared_mutex mutexImageStatus_;
 
-  bool isNodeRunning_ = true;
+  bool isNodeRunning_ = false;
   std::shared_mutex mutexNodeStatus_;
 
   int actionId_;

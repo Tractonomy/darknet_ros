@@ -43,8 +43,11 @@ def generate_launch_description():
     node_executable='darknet_ros',
     node_name='darknet_ros',
     output='screen',
+    emulate_tty='True',
     parameters=[ros_param_file, network_param_file,
       {
+        "autostart": False,
+        "autoconfigure": True,
         "config_path": yolo_config_path, 
         "weights_path": yolo_weights_path,
       },
