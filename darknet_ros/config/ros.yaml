@@ -1,4 +1,4 @@
-darknet_ros:
+/**:
   ros__parameters:
     subscribers:
       camera_reading:
