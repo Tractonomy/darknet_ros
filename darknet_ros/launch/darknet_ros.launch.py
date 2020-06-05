@@ -10,18 +10,15 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
   use_sim_time = LaunchConfiguration('use_sim_time', default = 'false')
+  autoconfigure = LaunchConfiguration('autoconfigure', default = 'true')
+  autostart = LaunchConfiguration('autostart', default = 'false')
   darknet_ros_share_dir = get_package_share_directory('darknet_ros')
 
-  image = LaunchConfiguration('image', default = '/camera/rgb/image_raw')
   yolo_weights_path = LaunchConfiguration('yolo_weights_path', default = darknet_ros_share_dir + '/yolo_network_config/weights')
   yolo_config_path = LaunchConfiguration('yolo_config_path', default = darknet_ros_share_dir + '/yolo_network_config/cfg')
   ros_param_file = LaunchConfiguration('ros_param_file', default = darknet_ros_share_dir + 'config/ros.yaml')
   network_param_file = LaunchConfiguration('network_param_file', default = darknet_ros_share_dir + 'config/carts-tiny.yaml')
 
-  declare_image_cmd = DeclareLaunchArgument(
-    'image',
-    default_value = '/camera/rgb/image_raw',
-    description = 'Image topic')
   declare_yolo_weights_path_cmd = DeclareLaunchArgument(
     'yolo_weights_path',
     default_value = darknet_ros_share_dir + '/yolo_network_config/weights',
@@ -43,26 +40,43 @@ def generate_launch_description():
     package='darknet_ros',
     node_executable='darknet_ros',
     node_name='darknet_ros',
+    node_namespace='darknet_ros',
     output='screen',
     emulate_tty='True',
     parameters=[ros_param_file, network_param_file,
       {
-        "autostart": False,
-        "autoconfigure": True,
+        "autostart": autostart,
+        "autoconfigure": autoconfigure,
         "config_path": yolo_config_path, 
         "weights_path": yolo_weights_path,
         "use_sim_time": use_sim_time,
       },
     ])
+  
+  # TODO most remappings can be removed when remappings support wildcards (out/**:=camera/color/image_raw/\1)
+  compression_node = Node(
+    package='image_transport',
+    node_executable='republish',
+    node_namespace='darknet_ros',
+    output='screen',
+    remappings=[
+            ('in', 'detection_image'),
+            ('out', 'detection_image'),
+            ('out/compressed', 'detection_image/compressed'),
+            ('out/compressedDepth', 'detection_image/compressedDepth'),
+            ('out/theora', 'detection_image/theora'),
+        ],
+    arguments=['raw', 'compressed'],
+    )
 
   ld = LaunchDescription()
 
-  ld.add_action(declare_image_cmd)
   ld.add_action(declare_yolo_weights_path_cmd)
   ld.add_action(declare_yolo_config_path_cmd)
   ld.add_action(declare_ros_param_file_cmd)
   ld.add_action(declare_network_param_file_cmd)
   
   ld.add_action(darknet_ros_cmd)
+  ld.add_action(compression_node)
 
   return ld
