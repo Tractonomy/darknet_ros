@@ -46,7 +46,7 @@ if ( X11_FOUND )
 endif ( X11_FOUND )
 
 # Find rquired packeges
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 3 REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 find_package(ament_cmake REQUIRED)
