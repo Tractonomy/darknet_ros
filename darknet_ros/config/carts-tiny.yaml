@@ -4,9 +4,9 @@
       config_file:
         name: carts-tiny.cfg
       weight_file:
-        name: carts-tiny.weights
+        name: carts-tiny_best.weights
       threshold:
-        value: 0.3
+        value: 0.8
       detection_classes:
         names:
           - cart

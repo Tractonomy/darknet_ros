@@ -2,22 +2,22 @@
   ros__parameters:
     subscribers:
       camera_reading:
-        topic: camera/color/image_raw
+        topic: /camera/color/image_raw
         queue_size: 1
     actions:
       camera_reading:
-        topic: check_for_objects
+        topic: darknet/check_for_objects
     publishers:
       object_detector:
-        topic: found_object
+        topic: darknet/found_object
         queue_size: 1
         latch: false
       bounding_boxes:
-        topic: bounding_boxes
+        topic: darknet/bounding_boxes
         queue_size: 1
         latch: false
       detection_image:
-        topic: detection_image
+        topic: darknet/detection_image
         queue_size: 1
         latch: false
     image_view:
